@@ -58,9 +58,7 @@
                         <i class="mdui-icon material-icons">face</i></span>
                     <span class="mdui-chip-title">Online Users</span>
                     <span class="mdui-chip-title chat-num" id="onlineCount">0</span>
-                    <!-- TODO: check online number num -->
                 </div>
-                 <!-- TODO: add a message container -->
                 <div class="message-container">
                 </div>
             </div>
@@ -81,7 +79,7 @@
         /**
          * WebSocket client PS：URL shows WebSocket protocal, port number, and then end point.
          */
-        var webSocket = new WebSocket('ws://localhost:8080/chat/'+$('#username').text());
+        var webSocket = new WebSocket('ws://localhost:8080/chat/' + $('#username').text());
         /**
          * websocket open connection.
          */
@@ -138,7 +136,7 @@
     function sendMsgToServer() {
         // verify connection status
         if (webSocket.readyState !== webSocket.OPEN) {
-            console.log("Invalid socket state: "+webSocket.readyState);
+            console.log("Invalid socket state: " + webSocket.readyState);
             return;
         }
         var $message = $('#msg');
