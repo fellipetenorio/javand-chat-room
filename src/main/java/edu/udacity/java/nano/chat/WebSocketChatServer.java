@@ -1,11 +1,11 @@
 package edu.udacity.java.nano.chat;
 
+import com.alibaba.fastjson.JSON;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,20 +24,37 @@ public class WebSocketChatServer {
      */
     private static Map<String, Session> onlineSessions = new ConcurrentHashMap<>();
 
-    private static void sendMessageToAll(String msg) {
-        //TODO: add send message method.
-            for (Map.Entry<String, Session> entry : onlineSessions.entrySet()) {
-                Session session = entry.getValue();
-                System.out.println("session::"+entry.getKey()+"::sessions: "+ session.getOpenSessions().size());
+    private static void sendMessageToAll(String msg, String type, String from) {
+        int onlineCount = onlineSessions.size();
+        for (Map.Entry<String, Session> entry : onlineSessions.entrySet()) {
+            Session session = entry.getValue();
+            String username = entry.getKey();
+
+            if (!session.isOpen()) {
                 try {
-                    for (Session sess : session.getOpenSessions()) {
-                        if (sess.isOpen())
-                            sess.getBasicRemote().sendText(msg);
-                    }
+                    session.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                onlineSessions.remove(username);
+                continue;
             }
+
+            System.out.println("session::" + entry.getKey() + "::sessions: " + session.getOpenSessions().size());
+            try {
+//                for (Session sess : session.getOpenSessions()) {
+//                    if (sess.isOpen()) {
+                session.getBasicRemote().sendText(Message.jsonConverter(type, from, msg, onlineCount));
+//                    }
+//                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static String getUsername(Session sess) {
+        return sess.getRequestParameterMap().get("username").get(0);
     }
 
     /**
@@ -45,11 +62,10 @@ public class WebSocketChatServer {
      */
     @OnOpen
     public void onOpen(Session session) {
-        System.out.println("onOpen::"+session.getId());
-        List<String> usernames = session.getRequestParameterMap().get("username");
-
-        final String username = usernames.get(0);
+        System.out.println("onOpen::" + session.getId());
+        final String username = getUsername(session);
         onlineSessions.put(username, session);
+        sendMessageToAll("entered", Message.ENTER, username);
     }
 
     /**
@@ -57,14 +73,24 @@ public class WebSocketChatServer {
      */
     @OnMessage
     public void onMessage(Session session, String jsonStr) {
-        System.out.println("onMessage: "+jsonStr);
-        //TODO: add send message.
-        sendMessageToAll(jsonStr);
-        try {
-            session.getBasicRemote().sendText(jsonStr);
-        } catch (IOException e) {
-            e.printStackTrace();
+        System.out.println("onMessage: " + jsonStr);
+        Message msgEnvelope = JSON.parseObject(jsonStr, Message.class);
+        String msgType = msgEnvelope.getType();
+        String type = Message.SPEAK;
+        String msg = msgEnvelope.getMsg();
+
+        if (null == msgType || "".equals(msgType)) {
+            type = Message.SPEAK;
+        } else if(Message.SPEAK.equals(msgType)) {
+            type = Message.SPEAK;
+        } else if (Message.QUIT.equals(msgType)) {
+            msg = "leaved";
+        } else if(Message.ENTER.equals(msgType)) {
+            type = Message.ENTER;
+            msg = "Entered";
         }
+
+        sendMessageToAll(msg, type, msgEnvelope.getUsername());
     }
 
     /**
@@ -72,7 +98,9 @@ public class WebSocketChatServer {
      */
     @OnClose
     public void onClose(Session session) {
-        //TODO: add close connection.
+        String username = getUsername(session);
+        onlineSessions.remove(username);
+        sendMessageToAll("leaved", Message.SPEAK, username);
     }
 
     /**

@@ -12,13 +12,13 @@ public class Message {
 
     private String type;
     private String username;
-    private String message;
+    private String msg;
     private int onlineCount;
 
-    public Message(String type, String username, String message, int onlineCount) {
+    public Message(String type, String username, String msg, int onlineCount) {
         this.type = type;
         this.username = username;
-        this.message = message;
+        this.msg = msg;
         this.onlineCount = onlineCount;
     }
 
@@ -42,12 +42,12 @@ public class Message {
         return username;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setMsg(String msg) {
+        this.msg = msg;
     }
 
-    public String getMessage() {
-        return message;
+    public String getMsg() {
+        return msg;
     }
 
     public void setOnlineCount(int onlineCount) {

@@ -13,7 +13,7 @@
     <div class="mdui-toolbar mdui-color-theme">
         <span class="mdui-typo-title">Chat Room</span>
         <div class="mdui-toolbar-spacer"></div>
-        <a class="mdui-btn mdui-btn-icon" th:href="@{/}">
+        <a class="mdui-btn mdui-btn-icon" th:href="@{/}" onclick="logout(this)">
             <i class="mdui-icon material-icons">exit_to_app</i>
         </a>
     </div>
@@ -87,7 +87,6 @@
          */
         webSocket.onopen = function (event) {
             console.log('WebSocket open connection', event);
-            webSocket.send(JSON.stringify({username: $('#username').text(), msg: 'ENTER'}));
         };
 
         /**
@@ -98,7 +97,7 @@
             //Receive Message from Server
             var message = JSON.parse(event.data) || {};
             var $messageContainer = $('.message-container');
-            if (message.type === 'SPEAK') {
+            if (message.type === 'SPEAK' || (message.type === 'ENTER' && message.username !== $('#username').text())) {
                 $messageContainer.append(
                     '<div class="mdui-card" style="margin: 10px 0;">' +
                     '<div class="mdui-card-primary">' +
@@ -137,6 +136,11 @@
      * Send messages to server use webSocket.
      */
     function sendMsgToServer() {
+        // verify connection status
+        if (webSocket.readyState !== webSocket.OPEN) {
+            console.log("Invalid socket state: "+webSocket.readyState);
+            return;
+        }
         var $message = $('#msg');
         if ($message.val()) {
             webSocket.send(JSON.stringify({username: $('#username').text(), msg: $message.val()}));
@@ -149,6 +153,12 @@
      */
     function clearMsg() {
         $(".message-container").empty();
+    }
+
+    function logout(e) {
+        // if (webSocket.readyState === webSocket.OPEN) {
+        //     webSocket.send(JSON.stringify({username: $('#username').text(), msg: '', type: 'QUIT'}));
+        // }
     }
 
     /**
